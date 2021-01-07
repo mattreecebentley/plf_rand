@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv)
 {
-	double total_time = 0, total_time_2 = 0, total_time_3 = 0, sum = 0;
+	double total_time = 0, total_time_2 = 0, sum = 0;
 	plf::nanotimer the_timer;
 
 
