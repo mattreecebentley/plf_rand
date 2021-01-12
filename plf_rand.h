@@ -16,33 +16,33 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 
-#ifndef PLF_RAND
-#define PLF_RAND
+#ifndef PLF_RAND_H
+#define PLF_RAND_H
 
 #if defined(_MSC_VER)
 	#if _MSC_VER >= 1900
-		#define PLF_RAND_NOEXCEPT noexcept
+		#define PLF_NOEXCEPT noexcept
 	#else
-		#define PLF_RAND_NOEXCEPT throw()
+		#define PLF_NOEXCEPT throw()
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || __GNUC__ > 4
-			#define PLF_RAND_NOEXCEPT noexcept
+			#define PLF_NOEXCEPT noexcept
 		#else
-			#define PLF_RAND_NOEXCEPT throw()
+			#define PLF_NOEXCEPT throw()
 		#endif
 	#elif defined(__clang__)
 		#if __has_feature(cxx_noexcept)
-			#define PLF_RAND_NOEXCEPT noexcept
+			#define PLF_NOEXCEPT noexcept
 		#else
-			#define PLF_RAND_NOEXCEPT throw()
+			#define PLF_NOEXCEPT throw()
 		#endif
 	#else // Assume support for other compilers
-		#define PLF_RAND_NOEXCEPT noexcept
+		#define PLF_NOEXCEPT noexcept
 	#endif
 #else
-	#define PLF_RAND_NOEXCEPT throw()
+	#define PLF_NOEXCEPT throw()
 #endif
 
 
@@ -56,7 +56,7 @@
  *
 */
 
-// Simplified by Matt Bentley 2020 (mattreecebentley@gmail.com)
+// Simplified by Matt Bentley 2021 (mattreecebentley@gmail.com)
 
 #include <cstdint>
 
@@ -71,7 +71,7 @@ struct pcg_state
 
 
 
-unsigned int rand() PLF_RAND_NOEXCEPT
+unsigned int rand() PLF_NOEXCEPT
 {
     const uint_least64_t oldstate = pcg_global.state;
     pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
@@ -82,7 +82,7 @@ unsigned int rand() PLF_RAND_NOEXCEPT
 
 
 
-void srand(const unsigned int init) PLF_RAND_NOEXCEPT
+void srand(const unsigned int init) PLF_NOEXCEPT
 {
     pcg_global.state = 0x853c49e6748fea9bULL;
     pcg_global.seq = (static_cast<uint_least32_t>(init) << 1u) | 1u;
@@ -106,7 +106,7 @@ namespace plf
 static unsigned long xorand_nums[4] = {123456789, 362436069, 521288629, 88675123};
 
 
-unsigned int rand() PLF_RAND_NOEXCEPT
+unsigned int rand() PLF_NOEXCEPT
 {
 	const unsigned long temp = xorand_nums[0] ^ (xorand_nums[0] << 11);
 
@@ -119,7 +119,7 @@ unsigned int rand() PLF_RAND_NOEXCEPT
 }
 
 
-void srand(const unsigned int seed) PLF_RAND_NOEXCEPT
+void srand(const unsigned int seed) PLF_NOEXCEPT
 {
 	xorand_nums[0] = 123456789 + seed;
 	xorand_nums[1] = 362436069 + seed;
@@ -140,6 +140,6 @@ void srand(const unsigned int seed) PLF_RAND_NOEXCEPT
 #endif
 
 
-#undef PLF_RAND_NOEXCEPT
+#undef PLF_NOEXCEPT
 
-#endif // PLF_RAND
+#endif // PLF_RAND_H
