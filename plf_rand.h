@@ -19,6 +19,7 @@
 #ifndef PLF_RAND_H
 #define PLF_RAND_H
 
+
 #if defined(_MSC_VER)
 	#if _MSC_VER >= 1900
 		#define PLF_NOEXCEPT noexcept
@@ -33,17 +34,22 @@
 			#define PLF_NOEXCEPT throw()
 		#endif
 	#elif defined(__clang__)
-		#if __has_feature(cxx_noexcept)
-			#define PLF_NOEXCEPT noexcept
+		#if __clang_major__ >= 3 // clang versions < 3 don't support __has_feature()
+			#if __has_feature(cxx_noexcept)
+				#define PLF_NOEXCEPT noexcept
+			#else
+				#define PLF_NOEXCEPT throw()
+			#endif
 		#else
 			#define PLF_NOEXCEPT throw()
 		#endif
-	#else // Assume support for other compilers
+	#else // Assume support for other compilers and standard library implementations
 		#define PLF_NOEXCEPT noexcept
 	#endif
 #else
 	#define PLF_NOEXCEPT throw()
 #endif
+
 
 
 
@@ -77,7 +83,7 @@ unsigned int rand() PLF_NOEXCEPT
     pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
     const uint_least32_t xorshifted = static_cast<uint_least32_t>(((oldstate >> 18u) ^ oldstate) >> 27u);
     const uint_least32_t rot = static_cast<uint_least32_t>(oldstate >> 59u);
-    return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((-rot) & 31)));
+    return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((~rot + 1) & 31)));
 }
 
 
