@@ -20,7 +20,7 @@
 #define PLF_RAND_H
 
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
 	#if _MSC_VER >= 1900
 		#define PLF_NOEXCEPT noexcept
 	#else
@@ -83,7 +83,7 @@ unsigned int rand() PLF_NOEXCEPT
     pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
     const uint_least32_t xorshifted = static_cast<uint_least32_t>(((oldstate >> 18u) ^ oldstate) >> 27u);
     const uint_least32_t rot = static_cast<uint_least32_t>(oldstate >> 59u);
-    return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((~rot + 1) & 31)));
+    return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((-rot) & 31)));
 }
 
 
