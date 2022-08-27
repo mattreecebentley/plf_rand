@@ -20,40 +20,36 @@
 #define PLF_RAND_H
 
 
+// Compiler-specific defines:
+
+#define PLF_NOEXCEPT throw() // default before potential redefine
+
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
 	#if _MSC_VER >= 1900
+		#undef PLF_NOEXCEPT
 		#define PLF_NOEXCEPT noexcept
-	#else
-		#define PLF_NOEXCEPT throw()
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || __GNUC__ > 4
+			#undef PLF_NOEXCEPT
 			#define PLF_NOEXCEPT noexcept
-		#else
-			#define PLF_NOEXCEPT throw()
 		#endif
 	#elif defined(__clang__)
-		#if __clang_major__ >= 3 // clang versions < 3 don't support __has_feature()
-			#if __has_feature(cxx_noexcept)
-				#define PLF_NOEXCEPT noexcept
-			#else
-				#define PLF_NOEXCEPT throw()
-			#endif
-		#else
-			#define PLF_NOEXCEPT throw()
+		#if __has_feature(cxx_noexcept)
+			#undef PLF_NOEXCEPT
+			#define PLF_NOEXCEPT noexcept
 		#endif
-	#else // Assume support for other compilers and standard library implementations
+	#else // Assume type traits and initializer support for other compilers and standard libraries
+		#undef PLF_NOEXCEPT
 		#define PLF_NOEXCEPT noexcept
 	#endif
-#else
-	#define PLF_NOEXCEPT throw()
 #endif
 
 
 
 
-#if defined(__cplusplus) && __cplusplus >= 201103L
+#if (defined(__cplusplus) && __cplusplus >= 201103L) || (defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__) && (_MSC_VER >= 1600))
 
 /*
  * PCG Random Number Generation for C.
@@ -112,7 +108,7 @@ namespace plf
 static unsigned long xorand_nums[4] = {123456789, 362436069, 521288629, 88675123};
 
 
-unsigned int rand() PLF_NOEXCEPT
+unsigned int rand()
 {
 	const unsigned long temp = xorand_nums[0] ^ (xorand_nums[0] << 11);
 
@@ -125,7 +121,7 @@ unsigned int rand() PLF_NOEXCEPT
 }
 
 
-void srand(const unsigned int seed) PLF_NOEXCEPT
+void srand(const unsigned int seed)
 {
 	xorand_nums[0] = 123456789 + seed;
 	xorand_nums[1] = 362436069 + seed;
