@@ -130,10 +130,7 @@ void srand(const unsigned int seed)
 
 	for (unsigned char index = 0; index != 4; ++index)
 	{
-		if (xorand_nums[index] == 0)
-		{
-			xorand_nums[index] = 1;
-		}
+		xorand_nums[index] += (xorand_nums[index] == 0);
 	}
 }
 
