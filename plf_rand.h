@@ -16,6 +16,16 @@
 // 3. This notice may not be removed or altered from any source distribution.
 
 
+/*
+ * PCG Random Number Generation for C.
+ *
+ * Copyright 2014 Melissa O'Neill <oneill@pcg-random.org>
+ *
+*/
+
+// Simplified by Matt Bentley 2026 (mattreecebentley@gmail.com)
+
+
 #ifndef PLF_RAND_H
 #define PLF_RAND_H
 
@@ -25,6 +35,10 @@
 #define PLF_NOEXCEPT throw() // default before potential redefine
 
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
+	// Suppress incorrect MSVC warning re: unsigned type:
+	#pragma warning ( push )
+	#pragma warning ( disable : 4146 )
+
 	#if _MSC_VER >= 1900
 		#undef PLF_NOEXCEPT
 		#define PLF_NOEXCEPT noexcept
@@ -51,16 +65,11 @@
 
 #if (defined(__cplusplus) && __cplusplus >= 201103L) || (defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__) && (_MSC_VER >= 1600))
 
-/*
- * PCG Random Number Generation for C.
- *
- * Copyright 2014 Melissa O'Neill <oneill@pcg-random.org>
- *
-*/
 
-// Simplified by Matt Bentley 2021 (mattreecebentley@gmail.com)
 
 #include <cstdint>
+
+
 
 namespace plf
 {
@@ -138,6 +147,10 @@ void srand(const unsigned int seed)
 
 #endif
 
+
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
+	#pragma warning ( pop )
+#endif
 
 #undef PLF_NOEXCEPT
 
