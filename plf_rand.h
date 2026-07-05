@@ -32,31 +32,27 @@
 
 // Compiler-specific defines:
 
-#define PLF_NOEXCEPT throw() // default before potential redefine
+#define PLF_RAND_NOEXCEPT throw() // default before potential redefine
 
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
-	// Suppress incorrect MSVC warning re: unsigned type:
-	#pragma warning ( push )
-	#pragma warning ( disable : 4146 )
-
 	#if _MSC_VER >= 1900
-		#undef PLF_NOEXCEPT
-		#define PLF_NOEXCEPT noexcept
+		#undef PLF_RAND_NOEXCEPT
+		#define PLF_RAND_NOEXCEPT noexcept
 	#endif
 #elif defined(__cplusplus) && __cplusplus >= 201103L // C++11 support, at least
 	#if defined(__GNUC__) && defined(__GNUC_MINOR__) && !defined(__clang__) // If compiler is GCC/G++
 		#if (__GNUC__ == 4 && __GNUC_MINOR__ >= 6) || __GNUC__ > 4
-			#undef PLF_NOEXCEPT
-			#define PLF_NOEXCEPT noexcept
+			#undef PLF_RAND_NOEXCEPT
+			#define PLF_RAND_NOEXCEPT noexcept
 		#endif
-	#elif defined(__clang__)
+	#elif defined(__clang__) && __clang_major__ >= 3
 		#if __has_feature(cxx_noexcept)
-			#undef PLF_NOEXCEPT
-			#define PLF_NOEXCEPT noexcept
+			#undef PLF_RAND_NOEXCEPT
+			#define PLF_RAND_NOEXCEPT noexcept
 		#endif
 	#else // Assume type traits and initializer support for other compilers and standard libraries
-		#undef PLF_NOEXCEPT
-		#define PLF_NOEXCEPT noexcept
+		#undef PLF_RAND_NOEXCEPT
+		#define PLF_RAND_NOEXCEPT noexcept
 	#endif
 #endif
 
@@ -65,93 +61,85 @@
 
 #if (defined(__cplusplus) && __cplusplus >= 201103L) || (defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__) && (_MSC_VER >= 1600))
 
+	#include <cstdint>
 
 
-#include <cstdint>
+	namespace plf
+	{
 
-
-
-namespace plf
-{
-
-struct pcg_state
-{
-    uint_least64_t state;             // RNG state.  All values are possible.
-    uint_least64_t seq;               // Controls which RNG sequence (stream) is selected. Must *always* be odd.
-} static pcg_global = {0x853c49e6748fea9bULL, 0xda3e39cb94b95bdbULL};
+	struct pcg_state
+	{
+	    uint_least64_t state;             // RNG state.  All values are possible.
+	    uint_least64_t seq;               // Controls which RNG sequence (stream) is selected. Must *always* be odd.
+	} static pcg_global = {0x853c49e6748fea9bULL, 0xda3e39cb94b95bdbULL};
 
 
 
-unsigned int rand() PLF_NOEXCEPT
-{
-    const uint_least64_t oldstate = pcg_global.state;
-    pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
-    const uint_least32_t xorshifted = static_cast<uint_least32_t>(((oldstate >> 18u) ^ oldstate) >> 27u);
-    const uint_least32_t rot = static_cast<uint_least32_t>(oldstate >> 59u);
-    return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((-rot) & 31)));
-}
+	unsigned int rand() PLF_RAND_NOEXCEPT
+	{
+	    const uint_least64_t oldstate = pcg_global.state;
+	    pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
+	    const uint_least32_t xorshifted = static_cast<uint_least32_t>(((oldstate >> 18u) ^ oldstate) >> 27u);
+	    const uint_least32_t rot = static_cast<uint_least32_t>(oldstate >> 59u);
+	    return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((-rot) & 31)));
+	}
 
 
 
-void srand(const unsigned int init) PLF_NOEXCEPT
-{
-    pcg_global.state = 0x853c49e6748fea9bULL;
-    pcg_global.seq = (static_cast<uint_least32_t>(init) << 1u) | 1u;
-    plf::rand();
-    pcg_global.state += 0x853c49e6748fea9bULL;
-    plf::rand();
-}
+	void srand(const unsigned int init) PLF_RAND_NOEXCEPT
+	{
+	    pcg_global.state = 0x853c49e6748fea9bULL;
+	    pcg_global.seq = (static_cast<uint_least32_t>(init) << 1u) | 1u;
+	    plf::rand();
+	    pcg_global.state += 0x853c49e6748fea9bULL;
+	    plf::rand();
+	}
 
-} // namespace
-
+	} // namespace
 
 #else // not C++11 or higher
 
-// xor_shift128++ generator substituted for pre-C++11 compilers (since C++03 doesn't have guaranteed cross-compiler 64-bit unsigned ints).
-// Based on https://codingforspeed.com/using-faster-psudo-random-generator-xorshift/
-
-namespace plf
-{
-
-// unsigned long is at least 32 bits in C++ - unsigned int is only guaranteed to be at least 16 bits:
-static unsigned long xorand_nums[4] = {123456789, 362436069, 521288629, 88675123};
-
-
-unsigned int rand()
-{
-	const unsigned long temp = xorand_nums[0] ^ (xorand_nums[0] << 11);
-
-	// Rotate the static values ([3] rotation in return statement):
-	xorand_nums[0] = xorand_nums[1];
-	xorand_nums[1] = xorand_nums[2];
-	xorand_nums[2] = xorand_nums[3];
-
-	return static_cast<unsigned int>(xorand_nums[3] = xorand_nums[3] ^ (xorand_nums[3] >> 19) ^ (temp ^ (temp >> 8)));
-}
-
-
-void srand(const unsigned int seed)
-{
-	xorand_nums[0] = 123456789 + seed;
-	xorand_nums[1] = 362436069 + seed;
-	xorand_nums[2] = 521288629 + seed;
-	xorand_nums[3] = 88675123 + seed;
-
-	for (unsigned char index = 0; index != 4; ++index)
+	// xor_shift128++ generator substituted for pre-C++11 compilers (since C++03 doesn't have guaranteed cross-compiler 64-bit unsigned ints).
+	// Based on https://codingforspeed.com/using-faster-psudo-random-generator-xorshift/
+	
+	namespace plf
 	{
-		xorand_nums[index] += (xorand_nums[index] == 0);
+	
+	// unsigned long is at least 32 bits in C++ - unsigned int is only guaranteed to be at least 16 bits:
+	static unsigned long xorand_nums[4] = {123456789, 362436069, 521288629, 88675123};
+	
+	
+	unsigned int rand()
+	{
+		const unsigned long temp = xorand_nums[0] ^ (xorand_nums[0] << 11);
+	
+		// Rotate the static values ([3] rotation in return statement):
+		xorand_nums[0] = xorand_nums[1];
+		xorand_nums[1] = xorand_nums[2];
+		xorand_nums[2] = xorand_nums[3];
+
+		return static_cast<unsigned int>(xorand_nums[3] = xorand_nums[3] ^ (xorand_nums[3] >> 19) ^ (temp ^ (temp >> 8)));
 	}
-}
 
-}
+
+	void srand(const unsigned int seed)
+	{
+		xorand_nums[0] = 123456789 + seed;
+		xorand_nums[1] = 362436069 + seed;
+		xorand_nums[2] = 521288629 + seed;
+		xorand_nums[3] = 88675123 + seed;
+
+		for (unsigned char index = 0; index != 4; ++index)
+		{
+			xorand_nums[index] += (xorand_nums[index] == 0);
+		}
+	}
+
+	} // plf namespace
 
 #endif
 
 
-#if defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__)
-	#pragma warning ( pop )
-#endif
-
-#undef PLF_NOEXCEPT
+#undef PLF_RAND_NOEXCEPT
 
 #endif // PLF_RAND_H
