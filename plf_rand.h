@@ -69,30 +69,30 @@
 
 	struct pcg_state
 	{
-	    uint_least64_t state;             // RNG state.  All values are possible.
-	    uint_least64_t seq;               // Controls which RNG sequence (stream) is selected. Must *always* be odd.
+		 uint_least64_t state;				  // RNG state.  All values are possible.
+		 uint_least64_t seq; 				  // Controls which RNG sequence (stream) is selected. Must *always* be odd.
 	} static pcg_global = {0x853c49e6748fea9bULL, 0xda3e39cb94b95bdbULL};
 
 
 
 	unsigned int rand() PLF_RAND_NOEXCEPT
 	{
-	    const uint_least64_t oldstate = pcg_global.state;
-	    pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
-	    const uint_least32_t xorshifted = static_cast<uint_least32_t>(((oldstate >> 18u) ^ oldstate) >> 27u);
-	    const uint_least32_t rot = static_cast<uint_least32_t>(oldstate >> 59u);
-	    return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((-rot) & 31)));
+		 const uint_least64_t oldstate = pcg_global.state;
+		 pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
+		 const uint_least32_t xorshifted = static_cast<uint_least32_t>(((oldstate >> 18u) ^ oldstate) >> 27u);
+		 const uint_least32_t rot = static_cast<uint_least32_t>(oldstate >> 59u);
+		 return static_cast<unsigned int>((xorshifted >> rot) | (xorshifted << ((-rot) & 31)));
 	}
 
 
 
 	void srand(const unsigned int init) PLF_RAND_NOEXCEPT
 	{
-	    pcg_global.state = 0x853c49e6748fea9bULL;
-	    pcg_global.seq = (static_cast<uint_least32_t>(init) << 1u) | 1u;
-	    plf::rand();
-	    pcg_global.state += 0x853c49e6748fea9bULL;
-	    plf::rand();
+		 pcg_global.state = 0x853c49e6748fea9bULL;
+		 pcg_global.seq = (static_cast<uint_least32_t>(init) << 1u) | 1u;
+		 plf::rand();
+		 pcg_global.state += 0x853c49e6748fea9bULL;
+		 plf::rand();
 	}
 
 	} // namespace
