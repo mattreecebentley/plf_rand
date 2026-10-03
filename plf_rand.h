@@ -56,13 +56,14 @@
 	#endif
 #endif
 
-
-
-
 #if (defined(__cplusplus) && __cplusplus >= 201103L) || (defined(_MSC_VER) && !defined(__clang__) && !defined(__GNUC__) && (_MSC_VER >= 1600))
-
+	#define PLF_RAND_CPP11_SUPPORT
 	#include <cstdint>
+#endif
 
+
+
+#if defined(PLF_RAND_CPP11_SUPPORT) && INTPTR_MAX >= INT64_MAX // If compilation is at least 64-bit
 
 	namespace plf
 	{
@@ -141,5 +142,6 @@
 
 
 #undef PLF_RAND_NOEXCEPT
+#undef PLF_RAND_CPP11_SUPPORT
 
 #endif // PLF_RAND_H
