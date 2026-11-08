@@ -72,12 +72,22 @@
 	{
 		 uint_least64_t state;				  // RNG state.  All values are possible.
 		 uint_least64_t seq; 				  // Controls which RNG sequence (stream) is selected. Must *always* be odd.
-	} static pcg_global = {0x853c49e6748fea9bULL, 0xda3e39cb94b95bdbULL};
+	};
 
 
 
-	unsigned int rand() PLF_RAND_NOEXCEPT
+	// A static local in an inline function, so every translation unit shares the one state, as with std::rand():
+	inline pcg_state & pcg_global_state() PLF_RAND_NOEXCEPT
 	{
+		static pcg_state pcg_global = {0x853c49e6748fea9bULL, 0xda3e39cb94b95bdbULL};
+		return pcg_global;
+	}
+
+
+
+	inline unsigned int rand() PLF_RAND_NOEXCEPT
+	{
+		 pcg_state &pcg_global = pcg_global_state();
 		 const uint_least64_t oldstate = pcg_global.state;
 		 pcg_global.state = oldstate * 6364136223846793005ULL + pcg_global.seq;
 		 const uint_least32_t xorshifted = static_cast<uint_least32_t>(((oldstate >> 18u) ^ oldstate) >> 27u);
@@ -87,10 +97,11 @@
 
 
 
-	void srand(const unsigned int init) PLF_RAND_NOEXCEPT
+	inline void srand(const unsigned int init) PLF_RAND_NOEXCEPT
 	{
+		 pcg_state &pcg_global = pcg_global_state();
 		 pcg_global.state = 0x853c49e6748fea9bULL;
-		 pcg_global.seq = (static_cast<uint_least32_t>(init) << 1u) | 1u;
+		 pcg_global.seq = (static_cast<uint_least64_t>(init) << 1u) | 1u; // Widen before shifting, so the top bit of init is kept
 		 plf::rand();
 		 pcg_global.state += 0x853c49e6748fea9bULL;
 		 plf::rand();
@@ -106,12 +117,18 @@
 	namespace plf
 	{
 	
-	// unsigned long is at least 32 bits in C++ - unsigned int is only guaranteed to be at least 16 bits:
-	static unsigned long xorand_nums[4] = {123456789, 362436069, 521288629, 88675123};
-	
-	
-	unsigned int rand()
+	// unsigned long is at least 32 bits in C++ - unsigned int is only guaranteed to be at least 16 bits.
+	// A static local in an inline function, so every translation unit shares the one state, as with std::rand():
+	inline unsigned long * xorand_state()
 	{
+		static unsigned long xorand_nums[4] = {123456789, 362436069, 521288629, 88675123};
+		return xorand_nums;
+	}
+	
+	
+	inline unsigned int rand()
+	{
+		unsigned long * const xorand_nums = xorand_state();
 		const unsigned long temp = xorand_nums[0] ^ (xorand_nums[0] << 11);
 	
 		// Rotate the static values ([3] rotation in return statement):
@@ -123,8 +140,9 @@
 	}
 
 
-	void srand(const unsigned int seed)
+	inline void srand(const unsigned int seed)
 	{
+		unsigned long * const xorand_nums = xorand_state();
 		xorand_nums[0] = 123456789 + seed;
 		xorand_nums[1] = 362436069 + seed;
 		xorand_nums[2] = 521288629 + seed;
